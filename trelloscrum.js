@@ -25,8 +25,8 @@ var _pointsAttr = ['cpoints', 'points'];
 
 
 //internals
-var reg = /((?:^|\s))\((\x3f|\d*\.?\d+)(\))\s?/m, //parse regexp- accepts digits, decimals and '?', surrounded by ()
-	regC = /((?:^|\s))\[(\x3f|\d*\.?\d+)(\])\s?/m, //parse regexp- accepts digits, decimals and '?', surrounded by []
+var reg = /((?:^|\s))\((\x3f|\d*\.?\d+)(?:\-(\x3f|\d*\.?\d+))?(\))\s?/m, //parse regexp- accepts digits, decimals and '?', surrounded by ()
+	regC = /((?:^|\s))\[(\x3f|\d*\.?\d+)(?:\])\s?/m, //parse regexp- accepts digits, decimals and '?', surrounded by []
 	iconUrl = chrome.extension.getURL('images/storypoints-icon.png'),
 	pointsDoneUrl = chrome.extension.getURL('images/points-done.png');
 
@@ -118,14 +118,25 @@ function List(el){
 		to = setTimeout(function(){
 			$total.empty().appendTo($list.find('.list-title'));
 			for (var i in _pointsAttr){
-				var score=0,
+				var scoreLower=0,
+					scoreUpper=0,
 					attr = _pointsAttr[i];
 				$list.find('.list-card:not(.placeholder):visible').each(function(){
 					if(!this.listCard) return;
-					if(!isNaN(Number(this.listCard[attr].points)))score+=Number(this.listCard[attr].points)
+					if(!isNaN(Number(this.listCard[attr].pointsLower))) {
+						scoreLower+=Number(this.listCard[attr].pointsLower)
+					}
+					if(!isNaN(Number(this.listCard[attr].pointsUpper))) {
+						scoreUpper+=Number(this.listCard[attr].pointsUpper)
+					}
 				});
-				var scoreTruncated = round(score);
-				$total.append('<span class="'+attr+'">'+(scoreTruncated>0?scoreTruncated:'')+'</span>');
+				var scoreLowerTruncated = round(scoreLower);
+				var scoreUpperTruncated = round(scoreUpper);
+				var scoreToDisplay = (scoreLowerTruncated > 0 ? scoreLowerTruncated : '');
+				if (scoreUpperTruncated>0) {
+					scoreToDisplay += '-'+scoreUpperTruncated;
+				}
+				$total.append('<span class="'+attr+'">'+ scoreToDisplay+'</span>');
 				computeTotal();
 			}
 		});
@@ -149,7 +160,9 @@ function ListCard(el, identifier){
 	}
 	el.listCard[identifier]=this;
 
-	var points=-1,
+	var pointsLower=-1,
+		pointsUpper=-1,
+		points=-1,
 		consumed=identifier!=='points',
 		regexp=consumed?regC:reg,
 		parsed,
@@ -173,12 +186,21 @@ function ListCard(el, identifier){
 			if(title!=ptitle) {
 				ptitle = title;
 				parsed=title.match(regexp);
-				points=parsed?parsed[2]:-1;
+				if (parsed) {
+					pointsLower = parsed[2];
+					pointsUpper = parsed[3]?parsed[3]:-1;
+				} else {
+					pointsLower = pointsUpper = -1;
+				}
 			}
 			clearTimeout(to2);
 			to2 = setTimeout(function(){
+				var pointsLabel = that.pointsLower;
+				if (that.pointsUpper) {
+					pointsLabel += '-'+that.pointsUpper;
+				}
 				$badge
-					.text(that.points)
+					.text(pointsLabel)
 					[(consumed?'add':'remove')+'Class']('consumed')
 					.attr({title: 'This card has '+that.points+ (consumed?' consumed':'')+' storypoint' + (that.points == 1 ? '.' : 's.')})
 					.prependTo($card.find('.badges'));
@@ -196,6 +218,14 @@ function ListCard(el, identifier){
 
 	this.__defineGetter__('points',function(){
 		return parsed?points:''
+	});
+	this.__defineGetter__('pointsLower', function() {
+		return parsed?pointsLower:'';
+	});
+	this.__defineGetter__('pointsUpper', function() {
+		if (!parsed) return '';
+		if (pointsUpper<0) return '';
+		return pointsUpper;
 	});
 
 	if(!consumed) el.addEventListener('DOMNodeInserted',function(e){

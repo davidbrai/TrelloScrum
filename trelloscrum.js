@@ -196,7 +196,7 @@ function ListCard(el, identifier){
 			clearTimeout(to2);
 			to2 = setTimeout(function(){
 				var pointsLabel = that.pointsLower;
-				if (that.pointsUpper) {
+				if (that.pointsUpper && that.pointsUpper != that.pointsLower) {
 					pointsLabel += '-'+that.pointsUpper;
 				}
 				$badge
@@ -224,7 +224,9 @@ function ListCard(el, identifier){
 	});
 	this.__defineGetter__('pointsUpper', function() {
 		if (!parsed) return '';
-		if (pointsUpper<0) return '';
+		if (pointsUpper<=0) {
+			return pointsLower;
+		}
 		return pointsUpper;
 	});
 

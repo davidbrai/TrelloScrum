@@ -116,7 +116,7 @@ function List(el){
 		if(e&&e.target&&!$(e.target).hasClass('list-card')) return;
 		clearTimeout(to);
 		to = setTimeout(function(){
-			$total.empty().appendTo($list.find('.list-title'));
+			$total.empty().appendTo($list.find('.js-list-name'));
 			for (var i in _pointsAttr){
 				var scoreLower=0,
 					scoreUpper=0,

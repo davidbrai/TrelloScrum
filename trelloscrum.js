@@ -47,6 +47,12 @@ $(function(){
 
 	calcListPoints();
 
+	var hackButton = $("<div id='trelloScrum'>");
+	hackButton.click(function() {
+		calcListPoints();
+	});
+	hackButton.appendTo($("body"));
+
 });
 
 document.body.addEventListener('DOMNodeInserted',function(e){
@@ -79,6 +85,7 @@ function computeTotal(){
 //calculate list totals
 var lto;
 function calcListPoints(){
+	console.log("Running calcListPoints");
 	clearTimeout(lto);
 	lto = setTimeout(function(){
 		$('.list').each(function(){
